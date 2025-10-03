@@ -1,0 +1,682 @@
+<!-- index.html for Flask render_template -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fun Message Board</title>
+    <style>
+    /* ...paste all CSS from styles.css here... */
+    body {
+        font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #23272f;
+        color: #f5f6fa;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        height: 100vh;
+    }
+    .container {
+        width: 480px;
+        margin-top: 24px; /* less top margin */
+        background: #2b2f3a;
+        border-radius: 18px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        padding: 18px 12px 10px 12px; /* less padding */
+        border: 1.5px solid #23272f;
+    }
+    h1 {
+        text-align: center;
+        font-weight: 700;
+        margin-bottom: 30px;
+        color: #fff;
+        letter-spacing: 1.5px;
+        font-size: 2.1em;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+    #messages {
+        border: none;
+        height: 470px; /* more space for chat */
+        overflow-y: auto;
+        padding: 0 2px;
+        background: transparent;
+        border-radius: 10px;
+        margin-bottom: 10px; /* less margin */
+        scroll-behavior: smooth; /* smooth scrolling */
+    }
+    .msg {
+        background: #313543;
+        border-radius: 9px;
+        margin-bottom: 10px;
+        padding: 8px 10px 6px 10px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+        transition: box-shadow 0.2s, background 0.2s;
+        border: 1.5px solid #23272f;
+        position: relative;
+    }
+    .msg:hover {
+        background: #363a4a;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.16);
+    }
+    .msg:last-child {
+        margin-bottom: 0;
+    }
+    .msg-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 7px;
+    }
+    .msg .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 7px;
+        font-size: 1.1em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #23272f;
+        border: 2px solid #44495a;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+        overflow: hidden;
+    }
+    .msg .avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .msg .nickname {
+        font-weight: 600;
+        color: #f5f6fa;
+        margin-right: 6px;
+        font-size: 1em;
+        flex-shrink: 0;
+        letter-spacing: 0.2px;
+    }
+    .msg .decoration {
+        font-size: 1em;
+        margin-right: 6px;
+        flex-shrink: 0;
+    }
+    .msg .text {
+        font-size: 1em;
+        color: #e3e6ee;
+        margin-bottom: 7px;
+        margin-left: 35px;
+        word-break: break-word;
+        line-height: 1.6;
+    }
+    .msg-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-left: 35px;
+    }
+    .msg .timestamp {
+        font-size: 0.93em;
+        color: #8a98b8;
+        margin-left: 0;
+        margin-right: 4px;
+        letter-spacing: 0.1px;
+    }
+    .msg button {
+        padding: 6px 14px;
+        border-radius: 6px;
+        border: none;
+        background: #5865f2;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1.05em;
+        margin: 0 0 0 6px;
+        transition: background 0.15s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+    .msg button:disabled {
+        background: #44495a;
+        cursor: not-allowed;
+    }
+    .msg button:hover:enabled {
+        background: #4752c4;
+    }
+    .msg .reactCount {
+        font-size: 1em;
+        color: #f5c518;
+        margin-left: 2px;
+        min-width: 18px;
+        display: inline-block;
+    }
+    input {
+        padding: 13px;
+        margin: 8px 0;
+        width: calc(100% - 26px);
+        box-sizing: border-box;
+        border-radius: 7px;
+        border: 1.5px solid #23272f;
+        font-size: 1.07em;
+        background: #23272f;
+        color: #f5f6fa;
+        transition: border 0.15s, background 0.15s;
+        outline: none;
+    }
+    input:focus {
+        border: 1.5px solid #5865f2;
+        background: #262a35;
+    }
+    label {
+        display: block;
+        margin-top: 13px;
+        margin-bottom: 4px;
+        font-size: 1em;
+        color: #bfc6d5;
+        font-weight: 500;
+        letter-spacing: 0.1px;
+    }
+    button, #sendBtn, #loginBtn, #guestBtn, #signupBtn {
+        padding: 11px 18px;
+        margin: 7px 0;
+        border-radius: 7px;
+        border: none;
+        background: #5865f2;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1.07em;
+        font-weight: 600;
+        transition: background 0.15s, box-shadow 0.15s;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+    }
+    button:disabled, #sendBtn:disabled, #loginBtn:disabled {
+        background: #44495a;
+        cursor: not-allowed;
+    }
+    button:hover:enabled, #sendBtn:hover:enabled, #loginBtn:hover:enabled, #guestBtn:hover:enabled, #signupBtn:hover:enabled {
+        background: #4752c4;
+    }
+    #onlineUsers {
+        font-size: 1em;
+        color: #bfc6d5;
+        margin-bottom: 14px;
+        padding-left: 2px;
+        letter-spacing: 0.1px;
+    }
+    #signupScreen, #entryScreen, #chatScreen {
+        margin-bottom: 0;
+    }
+    #nicknameScreen {
+        display: block;
+    }
+    #chatScreen {
+        display: none;
+    }
+    #loginError {
+        color: #ff5e5e !important;
+        font-weight: 500;
+        margin-top: 8px;
+    }
+    ::-webkit-scrollbar {
+        width: 8px;
+        background: #23272f;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #363a4a;
+        border-radius: 8px;
+    }
+    body, .container {
+        transition: background 0.3s, color 0.3s;
+    }
+    body.light {
+        background: #f5f6fa;
+        color: #23272f;
+    }
+    body.light .container {
+        background: #fff;
+        border: 1.5px solid #e3e6ee;
+        color: #23272f;
+    }
+    body.light .msg {
+        background: #f3f6fd;
+        border: 1.5px solid #e3e6ee;
+        color: #23272f;
+    }
+    body.light .msg .nickname {
+        color: #23272f;
+    }
+    body.light .msg .text {
+        color: #23272f;
+    }
+    body.light #onlineUsers {
+        color: #23272f;
+    }
+    body.light input {
+        background: #fff;
+        color: #23272f;
+        border: 1.5px solid #e3e6ee;
+    }
+    body.light input:focus {
+        background: #f3f6fd;
+        border: 1.5px solid #5865f2;
+    }
+    body.light button, body.light #sendBtn, body.light #loginBtn, body.light #guestBtn, body.light #signupBtn {
+        background: #5865f2;
+        color: #fff;
+    }
+    body.light .msg button:disabled {
+        background: #e3e6ee;
+        color: #bfc6d5;
+    }
+    body.light .msg-footer .timestamp {
+        color: #8a98b8;
+    }
+    .msg.new-msg {
+        animation: fadeInMsg 0.5s;
+    }
+    @keyframes fadeInMsg {
+        from { opacity: 0; transform: translateY(20px);}
+        to { opacity: 1; transform: translateY(0);}
+    }
+    .msg.system {
+        background: #23272f;
+        color: #f5c518;
+        border-left: 4px solid #f5c518;
+        font-style: italic;
+        text-align: center;
+        box-shadow: none;
+        margin-bottom: 10px;
+    }
+    body.light .msg.system {
+        background: #fffbe6;
+        color: #bfa100;
+        border-left: 4px solid #bfa100;
+    }
+    input:focus, button:focus, #sendBtn:focus, #loginBtn:focus, #guestBtn:focus, #signupBtn:focus {
+        outline: 2px solid #f5c518;
+        outline-offset: 2px;
+    }
+    .msg:focus-within {
+        box-shadow: 0 0 0 2px #f5c518;
+    }
+    #profileModal {
+        display: none;
+        position: fixed;
+        z-index: 100;
+        left: 0; top: 0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.45);
+        align-items: center;
+        justify-content: center;
+    }
+    #profileModal .modal-content {
+        background: #2b2f3a;
+        color: #f5f6fa;
+        border-radius: 12px;
+        padding: 28px 22px 18px 22px;
+        min-width: 300px;
+        max-width: 90vw;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        position: relative;
+    }
+    body.light #profileModal .modal-content {
+        background: #fff;
+        color: #23272f;
+    }
+    #profileModal .close {
+        position: absolute;
+        right: 14px;
+        top: 10px;
+        font-size: 1.5em;
+        cursor: pointer;
+        color: #bfc6d5;
+    }
+    #profileModal label {
+        margin-top: 10px;
+    }
+    #profileModal input {
+        margin-bottom: 10px;
+    }
+    .emoji-picker {
+        position: absolute;
+        bottom: 60px;
+        left: 0;
+        background: #2b2f3a;
+        border-radius: 10px;
+        padding: 8px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        z-index: 10;
+        max-width: 320px;
+    }
+    body.light .emoji-picker {
+        background: #fff;
+        border: 1px solid #e3e6ee;
+    }
+    .emoji-picker span {
+        font-size: 1.4em;
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 5px;
+        transition: background 0.15s;
+    }
+    .emoji-picker span:hover, .emoji-picker span:focus {
+        background: #5865f2;
+        color: #fff;
+        outline: none;
+    }
+    #notifDot {
+        display: inline-block;
+        width: 10px; height: 10px;
+        background: #f5c518;
+        border-radius: 50%;
+        margin-left: 7px;
+        vertical-align: middle;
+        box-shadow: 0 0 6px #f5c518;
+        animation: notifPulse 1s infinite;
+    }
+    @keyframes notifPulse {
+        0% { box-shadow: 0 0 6px #f5c518;}
+        50% { box-shadow: 0 0 16px #f5c518;}
+        100% { box-shadow: 0 0 6px #f5c518;}
+    }
+    #onlineUsers .user {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 10px;
+        margin-bottom: 2px;
+    }
+    #onlineUsers .avatar {
+        width: 22px;
+        height: 22px;
+        margin-right: 3px;
+        font-size: 1em;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #23272f;
+        border: 1.5px solid #44495a;
+        overflow: hidden;
+    }
+    body.light #onlineUsers .avatar {
+        background: #fff;
+        border: 1.5px solid #e3e6ee;
+    }
+    @media (max-width: 600px) {
+        .container {
+            width: 99vw;
+            padding: 4px;
+            min-width: unset;
+        }
+        #messages {
+            height: 160px;
+            padding: 4px 1px;
+        }
+        .msg {
+            padding: 4px 3px 3px 3px;
+        }
+        input, button, #sendBtn, #loginBtn, #guestBtn, #signupBtn {
+            font-size: 1em;
+        }
+        #onlineUsers {
+            font-size: 0.95em;
+        }
+        #profileModal .modal-content {
+            min-width: 90vw;
+            padding: 12px 4px 10px 4px;
+        }
+    }
+    </style>
+</head>
+<body>
+<div class="container">
+<h1>🎉 Fun Message Board 🎉</h1>
+<div id="entryScreen" style="display:block;">
+    <button id="guestBtn" onclick="chatAsGuest()">Chat as Guest</button>
+    <button id="signupBtn" onclick="showSignup()">Sign Up / Login</button>
+</div>
+<div id="signupScreen" style="display:none;">
+    <label for="nickname">Nickname:</label>
+    <input id="nickname" placeholder="Enter nickname">
+    <label for="key">Key (password):</label>
+    <input id="key" type="password" placeholder="Enter key">
+    <label for="decoration">Emoji / icon:</label>
+    <input id="decoration" placeholder="Emoji / icon">
+    <label for="avatar">Avatar (emoji or image URL):</label>
+    <input id="avatar" placeholder="e.g. 😎 or https://...">
+    <button id="loginBtn" onclick="signupOrLogin()">Sign Up / Login</button>
+    <button onclick="backToEntry()">Back</button>
+    <div id="loginError" style="color:red;display:none;"></div>
+</div>
+<div id="chatScreen" style="display:none;">
+    <div id="onlineUsers" style="margin-bottom:10px;"></div>
+    <div id="messages"></div>
+    <label for="msgInput">Message:</label>
+    <input id="msgInput" placeholder="Type your message">
+    <button id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+    <button id="clearBtn" onclick="clearMessages()" style="float:right;">Clear All Messages</button>
+</div>
+
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script>
+    var socket = io();
+    var messagesDiv = document.getElementById('messages');
+    var msgInput = document.getElementById('msgInput');
+    var sendBtn = document.getElementById('sendBtn');
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>"'`=\/]/g, function (s) {
+            return ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+                '`': '&#96;',
+                '=': '&#61;',
+                '/': '&#47;'
+            })[s];
+        });
+    }
+
+    function chatAsGuest() {
+        // Assign Guest nickname with random number
+        var guestNick = "Guest" + Math.floor(Math.random() * 10000);
+        socket.emit('join', {nickname: guestNick, avatar: ""});
+        document.getElementById('entryScreen').style.display = 'none';
+        document.getElementById('chatScreen').style.display = 'block';
+        msgInput.focus();
+    }
+
+    function showSignup() {
+        document.getElementById('entryScreen').style.display = 'none';
+        document.getElementById('signupScreen').style.display = 'block';
+        document.getElementById('loginError').style.display = 'none';
+    }
+
+    function backToEntry() {
+        document.getElementById('signupScreen').style.display = 'none';
+        document.getElementById('entryScreen').style.display = 'block';
+    }
+
+    function signupOrLogin() {
+        var nick = document.getElementById('nickname').value.trim();
+        var key = document.getElementById('key').value.trim();
+        var deco = document.getElementById('decoration').value || "";
+        var avatar = document.getElementById('avatar').value || "";
+        if (!nick || !key) {
+            showLoginError("Nickname and key required.");
+            return;
+        }
+        socket.emit('signup_or_login', {nickname: nick, key: key, decoration: deco, avatar: avatar});
+    }
+
+    function showLoginError(msg) {
+        var err = document.getElementById('loginError');
+        err.textContent = msg;
+        err.style.display = 'block';
+    }
+
+    function sendMessage(){
+        var msg = msgInput.value;
+        if(msg.trim()){
+            socket.emit('send_message', {msg: msg});
+            msgInput.value = '';
+            sendBtn.disabled = true;
+        }
+    }
+
+    // Show online users
+    socket.on('online_users', function(users){
+        var div = document.getElementById('onlineUsers');
+        // Show avatars and nicknames
+        div.innerHTML = "<b>Online:</b> " + users.map(function(u) {
+            if (u.avatar && u.avatar.startsWith('http')) {
+                return '<span class="user"><span class="avatar"><img src="' + u.avatar + '" class="avatar" alt=""></span>' + escapeHTML(u.nickname) + '</span>';
+            } else if (u.avatar) {
+                return '<span class="user"><span class="avatar">' + escapeHTML(u.avatar) + '</span>' + escapeHTML(u.nickname) + '</span>';
+            } else {
+                return '<span class="user"><span class="avatar"></span>' + escapeHTML(u.nickname) + '</span>';
+            }
+        }).join(", ");
+    });
+
+    // Add reactions to messages
+    function renderMessage(nick, deco, msg, time, id, avatar){
+        var msgDiv = document.createElement('div');
+        msgDiv.className = 'msg';
+
+        // Header: avatar, decoration, nickname
+        var headerDiv = document.createElement('div');
+        headerDiv.className = 'msg-header';
+
+        // Avatar: emoji or image
+        var avatarDiv = document.createElement('span');
+        avatarDiv.className = 'avatar';
+        if (avatar && avatar.startsWith('http')) {
+            var img = document.createElement('img');
+            img.src = avatar;
+            img.className = 'avatar';
+            img.alt = '';
+            avatarDiv.appendChild(img);
+        } else if (avatar) {
+            avatarDiv.textContent = avatar;
+        } else {
+            avatarDiv.textContent = '';
+        }
+        headerDiv.appendChild(avatarDiv);
+
+        // Decoration
+        if (deco) {
+            var decoDiv = document.createElement('span');
+            decoDiv.className = 'decoration';
+            decoDiv.textContent = deco;
+            headerDiv.appendChild(decoDiv);
+        }
+
+        // Nickname
+        var nickDiv = document.createElement('span');
+        nickDiv.className = 'nickname';
+        nickDiv.textContent = nick;
+        headerDiv.appendChild(nickDiv);
+
+        msgDiv.appendChild(headerDiv);
+
+        // Message text
+        var textDiv = document.createElement('div');
+        textDiv.className = 'text';
+        textDiv.textContent = msg;
+        msgDiv.appendChild(textDiv);
+
+        // Footer: timestamp and reactions
+        var footerDiv = document.createElement('div');
+        footerDiv.className = 'msg-footer';
+
+        var timeDiv = document.createElement('span');
+        timeDiv.className = 'timestamp';
+        // Convert UTC time string to local time
+        if (time) {
+            var d = new Date(time + 'Z');
+            timeDiv.textContent = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        } else {
+            timeDiv.textContent = "";
+        }
+        footerDiv.appendChild(timeDiv);
+
+        // Reaction button
+        var reactBtn = document.createElement('button');
+        reactBtn.textContent = "👍";
+        reactBtn.style.marginLeft = "8px";
+        reactBtn.onclick = function() {
+            socket.emit('react', {msg_id: id});
+        };
+        footerDiv.appendChild(reactBtn);
+
+        var reactCount = document.createElement('span');
+        reactCount.className = 'reactCount';
+        reactCount.id = 'react-' + id;
+        reactCount.style.marginLeft = "4px";
+        footerDiv.appendChild(reactCount);
+
+        msgDiv.appendChild(footerDiv);
+
+        messagesDiv.appendChild(msgDiv);
+        // Smooth scroll to bottom
+        messagesDiv.scrollTo({top: messagesDiv.scrollHeight, behavior: "smooth"});
+    }
+
+    socket.on('load_messages', function(data){
+        messagesDiv.innerHTML = "";
+        data.forEach(function(m){
+            // m[3] is UTC timestamp string
+            renderMessage(m[0], m[1], m[2], m[3], m[4], m[5]);
+        });
+    });
+
+    socket.on('new_message', function(data){
+        renderMessage(data.nickname, data.decoration, data.msg, data.timestamp, data.id, data.avatar);
+    });
+
+    socket.on('update_react', function(data){
+        var el = document.getElementById('react-' + data.msg_id);
+        if(el) el.textContent = " " + data.count;
+    });
+
+    socket.on('login_result', function(data){
+        if(data.success){
+            document.getElementById('signupScreen').style.display = 'none';
+            document.getElementById('chatScreen').style.display = 'block';
+            msgInput.focus();
+        } else {
+            showLoginError(data.error || "Login failed.");
+        }
+    });
+
+    // Clear all messages (admin/deployment)
+    function clearMessages() {
+        fetch('/clear', {method: 'POST'}).then(function() {
+            messagesDiv.innerHTML = "";
+        });
+    }
+
+    // Accessibility/UX: Enter key to join/send
+    document.getElementById('nickname')?.addEventListener('keydown', function(e){
+        if(e.key === 'Enter') signupOrLogin();
+    });
+    document.getElementById('key')?.addEventListener('keydown', function(e){
+        if(e.key === 'Enter') signupOrLogin();
+    });
+    document.getElementById('decoration')?.addEventListener('keydown', function(e){
+        if(e.key === 'Enter') signupOrLogin();
+    });
+    msgInput.addEventListener('keydown', function(e){
+        if(e.key === 'Enter' && !sendBtn.disabled) sendMessage();
+    });
+
+    // Disable send button if input is empty
+    msgInput.addEventListener('input', function(){
+        sendBtn.disabled = !msgInput.value.trim();
+    });
+</script>
+</body>
+</html>
