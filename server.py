@@ -1,12 +1,12 @@
-from flask import Flask, render_template, request, session, send_from_directory
+from flask import Flask, send_from_directory, request, session
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 import sqlite3
 import os
 import html
-import hashlib
 import threading
 import datetime
+import hashlib
 
 # For eventlet monkey patching (required for Flask-SocketIO with eventlet)
 import eventlet
@@ -84,9 +84,6 @@ def sanitize_input(s, maxlen=64):
     s = s[:maxlen]
     return html.escape(s)
 
-def hash_key(key):
-    return hashlib.sha256(key.encode('utf-8')).hexdigest()
-
 def get_db_conn():
     # Use check_same_thread=False for eventlet/threaded environments
     return sqlite3.connect(DB_FILE, check_same_thread=False)
@@ -152,41 +149,6 @@ def get_recent_messages(limit=MAX_MESSAGES):
         print("DB error:", e)
         return []
 
-def get_user(nickname):
-    try:
-        conn = get_db_conn()
-        c = conn.cursor()
-        c.execute("SELECT nickname, key_hash, decoration, avatar FROM users WHERE nickname = ?", (nickname,))
-        row = c.fetchone()
-        conn.close()
-        return row
-    except Exception as e:
-        print("DB error:", e)
-        return None
-
-def create_user(nickname, key_hash, decoration, avatar):
-    try:
-        conn = get_db_conn()
-        c = conn.cursor()
-        c.execute("INSERT INTO users (nickname, key_hash, decoration, avatar) VALUES (?, ?, ?, ?)",
-                  (nickname, key_hash, decoration, avatar))
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        print("DB error:", e)
-        return False
-
-def update_user_decoration_avatar(nickname, decoration, avatar):
-    try:
-        conn = get_db_conn()
-        c = conn.cursor()
-        c.execute("UPDATE users SET decoration = ?, avatar = ? WHERE nickname = ?", (decoration, avatar, nickname))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print("DB error:", e)
-
 def get_react_count(msg_id):
     try:
         conn = get_db_conn()
@@ -216,6 +178,44 @@ def broadcast_online_users():
         users = [{'nickname': info['nickname'], 'avatar': info.get('avatar', '')} for info in online_users.values()]
     socketio.emit('online_users', users)
 
+# Helper functions for user management
+def hash_key(key):
+    return hashlib.sha256(key.encode('utf-8')).hexdigest()
+
+def get_user(nickname):
+    try:
+        conn = get_db_conn()
+        c = conn.cursor()
+        c.execute("SELECT nickname, key_hash, decoration, avatar FROM users WHERE nickname = ?", (nickname,))
+        row = c.fetchone()
+        conn.close()
+        return row
+    except Exception:
+        return None
+
+def create_user(nickname, key_hash, decoration, avatar):
+    try:
+        conn = get_db_conn()
+        c = conn.cursor()
+        c.execute("INSERT INTO users (nickname, key_hash, decoration, avatar) VALUES (?, ?, ?, ?)",
+                  (nickname, key_hash, decoration, avatar))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print("DB error (create_user):", e)
+        return False
+
+def update_user_decoration_avatar(nickname, decoration, avatar):
+    try:
+        conn = get_db_conn()
+        c = conn.cursor()
+        c.execute("UPDATE users SET decoration = ?, avatar = ? WHERE nickname = ?", (decoration, avatar, nickname))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print("DB error (update_user_decoration_avatar):", e)
+
 @app.route('/')
 def index():
     try:
@@ -232,20 +232,15 @@ def styles():
 
 @socketio.on('join')
 def handle_join(data):
-    nickname = data.get('nickname', '')
-    avatar = data.get('avatar', '')
-    if nickname.startswith("Guest"):
-        session['nickname'] = nickname
-        session['decoration'] = ""
-        session['avatar'] = avatar
-        session['authenticated'] = True
-        with online_lock:
-            online_users[request.sid] = {'nickname': nickname, 'avatar': avatar}
-        messages = get_recent_messages()
-        emit('load_messages', messages)
-        broadcast_online_users()
-    else:
-        emit('login_result', {'success': False, 'error': 'Please sign up or login.'})
+    nickname = sanitize_input(data.get('nickname', ''))
+    if not nickname:
+        return
+    avatar = get_avatar(nickname)
+    with online_lock:
+        online_users[request.sid] = {'nickname': nickname, 'avatar': avatar}
+    messages = get_recent_messages()
+    emit('load_messages', messages)
+    broadcast_online_users()
 
 @socketio.on('signup_or_login')
 def handle_signup_or_login(data):
@@ -339,6 +334,11 @@ def clear_messages():
         conn.close()
     except Exception as e:
         print("DB error (clear):", e)
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port)
+    # For Render.com: Gunicorn must be started with: gunicorn -k eventlet -w 1 server:app
 
 if __name__ == "__main__":
     clear_messages()
